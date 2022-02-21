@@ -8,4 +8,4 @@
 7) View status.
 8) Logout.
 
-NOTE: This was my first individual full stack project while I was in diploma.
+
