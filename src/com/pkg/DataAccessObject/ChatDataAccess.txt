@@ -1,0 +1,345 @@
+package com.pkg.DataAccessObject;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.pkg.Utility.DataBaseConnection;
+import com.pkg.Utility.StatusConstants;
+import com.pkg.DataTransferObject.RequestObject;
+import com.pkg.DataTransferObject.UserInfo;
+
+public class ChatDataAccess 
+{
+
+	
+	public List<RequestObject> getSentRequestPendingList(int connectionStatus, int userid) 
+	{
+			RequestObject pendingRequest = null;
+			List<RequestObject> pendindRequestList = new ArrayList<RequestObject>();	// to store pending list
+			Connection connection = DataBaseConnection.getConnectionObject();
+			Statement statement = null;
+			ResultSet set;
+			
+			String selectQuery = "select ci.acceptor_userid, ui.firstname, ui.lastname from tbl_connections_info ci, tbl_user_info ui where ci.acceptor_userid = ui.userid and ci.connection_status_cd like '"+connectionStatus+"' and ci.requestor_userid = "+userid;
+			
+			try
+			{
+				statement = connection.createStatement();
+				set = statement.executeQuery(selectQuery);
+				
+				while(set.next())
+				{
+					pendingRequest = new RequestObject();			// creates new pending request object
+					
+					//  Extracts data from result set by column
+					Integer acceptor_userid = set.getInt("acceptor_userid"); 
+					String firstname = set.getString("firstname");
+					String lastname  = set.getString("lastname");
+					
+					// sets data to pending request object 
+					pendingRequest.setUserid(acceptor_userid);
+					pendingRequest.setFirstname(firstname);
+					pendingRequest.setLastname(lastname);
+					pendingRequest.setRequestType("Already Requested");
+					
+					pendindRequestList.add(pendingRequest);
+					
+				}
+				
+			}
+			catch(Exception e)
+			{
+				
+				System.out.println(e);
+			}
+			
+			return pendindRequestList;
+	}
+	
+	
+	
+	//		Return the Pending connection list in such a way that request has been recieved
+	//		But no yet accepted by you...
+	
+	public List<RequestObject> getRecievedRequestPendingList(int connectionStatus, int userid) 
+	{
+			RequestObject pendingRequest = null;
+			List<RequestObject> pendindRequestList = new ArrayList<RequestObject>();	// to store pending list
+			Connection connection = DataBaseConnection.getConnectionObject();
+			Statement statement = null;
+			ResultSet set;
+		
+			String selectQuery ="select ci.requestor_userid, ui.firstname, ui.lastname from tbl_connections_info ci, tbl_user_info ui where ci.requestor_userid = ui.userid and ci.connection_status_cd like '"+connectionStatus+"' and ci.acceptor_userid = "+userid; 
+					
+			try
+			{
+				statement = connection.createStatement();
+				set = statement.executeQuery(selectQuery);
+			
+				while(set.next())
+				{
+					pendingRequest = new RequestObject();			// creates new pending request object
+				
+					//  Extracts data from result set by column
+					Integer acceptor_userid = set.getInt("requestor_userid"); 
+					String firstname = set.getString("firstname");
+					String lastname  = set.getString("lastname");
+				
+					// sets data to pending request object 
+					pendingRequest.setUserid(acceptor_userid);
+					pendingRequest.setFirstname(firstname);
+					pendingRequest.setLastname(lastname);
+					pendingRequest.setRequestType("Accept Request");
+				
+					pendindRequestList.add(pendingRequest);
+				
+				}
+			
+			}
+			catch(Exception e)
+			{
+			
+				System.out.println(e);
+			}	
+		
+		return pendindRequestList;	
+		
+	}
+	
+	
+	
+	public List<RequestObject> getSentRequestAcceptedList(int statusConstant, int userid)
+	{
+			RequestObject acceptedRequest = null;
+			List<RequestObject> acceptedRequestList = new ArrayList<RequestObject>();
+			Connection connection = DataBaseConnection.getConnectionObject();
+			Statement statement = null;
+			ResultSet set;
+			String selectQuery = "select ci.acceptor_userid,ui.firstname, ui.lastname from tbl_connections_info ci,tbl_user_info ui where ci.acceptor_userid = ui.userid and ci.connection_status_cd like '"+ statusConstant+ "' and ci.requestor_userid =" + userid;
+		
+			try
+			{
+				statement = connection.createStatement();
+				set = statement.executeQuery(selectQuery);
+				
+				while(set.next())
+				{
+					acceptedRequest = new RequestObject();
+					int acceptor_userid = set.getInt("acceptor_userid");
+					String firstname = set.getString("firstname");
+					String lastname = set.getString("lastname");
+				
+					acceptedRequest.setUserid(acceptor_userid);
+					acceptedRequest.setFirstname(firstname);
+					acceptedRequest.setLastname(lastname);
+				
+					acceptedRequestList.add(acceptedRequest);
+				
+				}
+			}
+			catch(Exception e)
+			{
+				System.out.println(e);
+			
+			}
+		
+		return acceptedRequestList;
+	}
+	
+	
+	
+	
+	
+	public List<RequestObject> getRecievedRequestAcceptedList(int connectionStatus, int userid) 
+	{
+			RequestObject acceptedRequest = null;
+			List<RequestObject> acceptedRequestList = new ArrayList<RequestObject>();	// to store pending list
+			Connection connection = DataBaseConnection.getConnectionObject();
+			Statement statement = null;
+			ResultSet set;
+		
+			String selectQuery ="select ci.requestor_userid, ui.firstname, ui.lastname from tbl_connections_info ci, tbl_user_info ui where ci.requestor_userid = ui.userid and ci.connection_status_cd like '"+connectionStatus+"' and ci.acceptor_userid = "+userid; 
+					
+			try
+			{
+				statement = connection.createStatement();
+				set = statement.executeQuery(selectQuery);
+			
+				while(set.next())
+				{
+					acceptedRequest = new RequestObject();			// creates new accepted request object
+				
+					//  Extracts data from result set by column
+					Integer requestor_userid = set.getInt("requestor_userid"); 
+					String firstname = set.getString("firstname");
+					String lastname  = set.getString("lastname");
+				
+					// sets data to accepted request object 
+					
+					acceptedRequest.setUserid(requestor_userid);
+					acceptedRequest.setFirstname(firstname);
+					acceptedRequest.setLastname(lastname);
+					acceptedRequest.setRequestType("Request Accepted");
+					
+				
+					acceptedRequestList.add(acceptedRequest);
+				
+				}
+			
+			}
+			catch(Exception e)
+			{
+			
+				System.out.println(e);
+			}	
+		
+		return acceptedRequestList;	
+		
+	}
+
+	
+	// 	Verifies the connection between sender and reciever if there is no connection then makes entry in database
+	
+		public Integer  getConnectionStatus(int requestorId, int acceptorId)
+		{
+			Integer connectionStatus = null;
+		
+			Connection connection = DataBaseConnection.getConnectionObject();
+			Statement statement = null;
+			String selectQuery = "select connection_status_cd from tbl_connections_info where requestor_userid = "+requestorId+" and acceptor_userid = "+acceptorId;
+			ResultSet set = null;
+		
+			try
+			{
+				statement = connection.createStatement();
+				set = statement.executeQuery(selectQuery);
+			
+				if(!set.next())
+				{
+				
+					selectQuery = "select connection_status_cd from tbl_connections_info where requestor_userid = "+acceptorId+" and acceptor_userid = "+requestorId;
+					set = statement.executeQuery(selectQuery);
+				
+					if(!set.next())
+					{
+						connectionStatus = StatusConstants.NOTFOUND;
+					
+					}
+					else
+					{
+						do
+						{
+							connectionStatus = set.getInt("connection_status_cd");
+						
+						}while(set.next());
+					
+					}
+				}
+				else
+				{
+				
+					do
+					{
+						connectionStatus = set.getInt("connection_status_cd");
+					
+					}while(set.next());
+
+				}
+			
+			}
+			catch(Exception e)
+			{
+				System.out.println(e);
+			}
+		
+		return connectionStatus;
+		
+		}
+		
+		// 	 inserts connection status info into the connection table
+		public boolean sendRequest(int requestorId, int acceptorId) 
+		{
+				boolean requestSent = false;
+				Connection connection = DataBaseConnection.getConnectionObject();
+				Statement statement = null;
+				String insertQuery = "insert into tbl_connections_info (requestor_userid, acceptor_userid, connection_status_cd) values("+requestorId+", "+acceptorId+", "+StatusConstants.PENDING+")";
+				
+				try
+				{
+					statement = connection.createStatement();
+					statement.executeQuery(insertQuery);
+					
+					requestSent = true;
+					connection.commit();
+					
+				}
+				catch(Exception e)
+				{
+					System.out.println(e);
+					
+				}
+				finally
+				{
+					
+					try
+					{
+						statement.close();
+						connection.close();
+					}
+					catch(Exception exp)
+					{
+						System.out.println(exp);
+					}
+				}
+				
+			
+				return requestSent;
+		}
+		
+	
+	
+//		Changes the connection state of two user if request is accepted 
+		
+	public boolean acceptRequest(int acceptor_userid, int requestor_userid) 
+	{
+			boolean isAccepted= false;
+			Connection connection = DataBaseConnection.getConnectionObject();
+			Statement statement = null;
+			String updateQuery = "update tbl_connections_info set connection_status_cd = 1006 where requestor_userid = "+requestor_userid+" and acceptor_userid = "+acceptor_userid;
+
+			try
+			{
+				statement = connection.createStatement();
+				statement.executeUpdate(updateQuery);
+				isAccepted = true;
+				
+				connection.commit();
+			}
+			catch(Exception e)
+			{
+				System.out.println(e);
+			}
+			finally
+			{
+				
+				try
+				{
+					
+					statement.close();
+					connection.close();
+				}
+				catch(Exception e)
+				{
+					System.out.println(e);
+					
+				}
+			}
+			
+			return isAccepted;
+	}
+
+		
+}

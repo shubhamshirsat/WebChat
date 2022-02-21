@@ -1,0 +1,209 @@
+package com.pkg.DataAccessObject;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.pkg.Utility.DataBaseConnection;
+import com.pkg.Utility.StatusConstants;
+import com.pkg.DataTransferObject.UserInfo;
+
+public class AdminDataAccess
+{
+	
+	public UserInfo getUser(String userEmail) throws SQLException
+	{
+	
+			UserInfo userInfo = null;
+			Statement stmt;
+			ResultSet rs;
+			String query;
+	
+			/*
+			 * get the DB connection and get statement object
+			 * create and execute query
+			 */
+			Connection connection = DataBaseConnection.getConnectionObject();
+			stmt = connection.createStatement();
+			query = "select * from tbl_user_info where email = '"+userEmail+"'";
+			
+			//Query result stored in rs object.
+			rs = stmt.executeQuery(query); 
+    
+			//Extract data from result set
+			while(rs.next())
+			{
+				//Retrieve by column name
+    	
+				int userId  = rs.getInt("userid");
+				String firstname = rs.getString("firstname");
+				String lastname = rs.getString("lastname");
+				String email = rs.getString("email");
+				String password = rs.getString("password");
+				int status = rs.getInt("status");
+
+				userInfo = new UserInfo();
+				userInfo.setUserid(userId);
+				userInfo.setFirstname(firstname);
+				userInfo.setLastname(lastname);
+				userInfo.setEmail(email);
+				userInfo.setPassword(password);
+				userInfo.setStatus(status);
+			
+			}
+			rs.close();
+    
+			return userInfo;
+	}
+	
+	
+	// return true if data successfully saved
+			public boolean saveUser(String firstname, String lastname, String email, String password)throws SQLException
+	{
+				boolean isSaved = false;
+				
+				// get connection object
+				
+				Connection connection = DataBaseConnection.getConnectionObject();
+				
+				Statement statement = null;
+
+				String insertTableSQL = "INSERT INTO tbl_user_info"
+						+ "(firstname, lastname, email, password, status)" + "VALUES"
+						+ "('"+firstname+"','"+lastname+"','"+email+"','"+password+"',"+StatusConstants.REGISTERED+")";
+
+				try 
+				{
+					
+						statement = connection.createStatement();
+
+						// execute insert SQL stetement
+						statement.executeUpdate(insertTableSQL);
+
+						isSaved = true;
+						connection.commit();
+				}
+				catch (SQLException e) 
+				{
+					System.out.println(e.getMessage());
+				} 
+				finally
+				{
+
+					if (statement != null) 
+					{
+						statement.close();
+					}
+
+					if (connection != null)
+					{
+						connection.close();
+					}
+
+				}
+				
+			return isSaved;
+				
+	}		//   method ends.....
+			
+			
+			// Get user list that matches pattern.......
+			
+	public List<UserInfo> searchUser(String username) throws SQLException
+	{	
+				UserInfo userInfo = null;
+				 List<UserInfo> userInfos = new ArrayList<UserInfo>();
+	   	
+				 Statement stmt;
+				 ResultSet rs;
+				 String query;
+	   	
+			/*
+			 * get the DB connection and get statement object
+			 * create and execute query
+			 */
+			Connection connection = DataBaseConnection.getConnectionObject();
+	       stmt = connection.createStatement();
+	       query = "select * from tbl_user_info where firstname like '%"+username+"%'";
+	       
+	       //Query result stored in rs object.
+	       rs = stmt.executeQuery(query); 
+	       
+	       //Extract data from result set
+	       while(rs.next())
+	       {
+	          //Retrieve by column name
+	       	
+	          int userId  = rs.getInt("userid");
+	          String firstname = rs.getString("firstname");
+	          String lastname = rs.getString("lastname");
+	          String email = rs.getString("email");
+	          String password = rs.getString("password");
+	          int status = rs.getInt("status");
+
+	          userInfo = new UserInfo();
+	          userInfo.setUserid(userId);
+	          userInfo.setFirstname(firstname);
+	          userInfo.setLastname(lastname);
+	          userInfo.setEmail(email);
+	          userInfo.setPassword(password);
+	          userInfo.setStatus(status);
+	          userInfos.add(userInfo);
+	       }
+	       rs.close();
+	       
+	       return userInfos;
+	}
+			
+	
+			
+	public boolean updateStatus(int userId, int status)
+	{
+				boolean isUpdated = false;
+					
+				Connection connection = DataBaseConnection.getConnectionObject();
+				Statement statement = null;
+				String updateQuery="update tbl_user_info set status= "+status+" where userid= "+userId;
+				
+				try
+				{
+					statement = connection.createStatement();
+					statement.executeUpdate(updateQuery);
+					isUpdated = true;
+					
+					connection.commit();
+					
+				}
+				catch(Exception e)
+				{
+					
+					System.out.println(e.getMessage());
+				}
+				finally 
+				{
+					try
+					{
+						if (statement != null) 
+						{
+							statement.close();
+						}
+
+						if (connection != null) 
+						{
+							connection.close();
+						}
+					}
+					catch(Exception e)
+					{
+						System.out.println(e.getMessage());
+					}
+
+				}
+					
+				return isUpdated;
+		}
+    
+}
